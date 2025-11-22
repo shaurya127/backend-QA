@@ -99,3 +99,57 @@ This makes the code cleaner, more readable, and easier to maintain.
 
 ### 25. What is the purpose of `process.env.PORT || 8080` in `server.js`?
 **Answer:** It sets the port the server listens on. It tries to use the `PORT` environment variable (commonly provided by hosting platforms like Heroku or Google Cloud Run). If that variable is not set (e.g., running locally without a .env specifying it), it defaults to port `8080`.
+
+---
+
+## Hackathon & System Design (Advanced/Scenario-based)
+
+### 26. If this app suddenly got 10,000 concurrent users, what would break first and how would you fix it?
+**Answer:** 
+- **Bottleneck:** The single MongoDB instance or the Node.js single-threaded event loop might get overwhelmed.
+- **Fix:** 
+    1.  **Database:** Use MongoDB Atlas connection pooling and implement caching (Redis) for frequently accessed data like the dashboard.
+    2.  **App:** Run multiple instances of the Node.js server using a process manager like PM2 or deploy to a scalable container service (like Kubernetes or AWS ECS) behind a Load Balancer.
+
+### 27. Why did you choose MongoDB (NoSQL) over a SQL database for this project?
+**Answer:** 
+- **Speed of Development:** MongoDB's flexible schema allowed us to iterate quickly without complex migrations when requirements changed during the hackathon.
+- **Data Structure:** Health data (like medical history or variable daily goals) is often unstructured or semi-structured, which fits well with JSON-like documents.
+
+### 28. We see you are using JWTs. Where are you storing them on the frontend and is it secure?
+**Answer:** 
+- **Current (MVP):** Storing in `localStorage` for speed of implementation.
+- **Security Risk:** Vulnerable to XSS attacks.
+- **Production Fix:** Store tokens in `httpOnly` cookies, which cannot be accessed by JavaScript, preventing XSS token theft.
+
+### 29. How would you implement real-time notifications (e.g., "Time to drink water")?
+**Answer:** 
+- **Current:** The client polls the server or checks local logic.
+- **Better Approach:** Use **WebSockets** (Socket.io) to maintain a persistent connection. The server can then push notification events to the client instantly without the client needing to refresh or poll.
+
+### 30. If the server crashes while saving a user's wellness data, how do you ensure data consistency?
+**Answer:** 
+- **Transactions:** MongoDB supports multi-document ACID transactions. We would wrap related operations (e.g., updating user stats and adding a history log) in a transaction session so that either all succeed or all fail, preventing partial data updates.
+
+### 31. You used `console.log` in production (via Morgan). Why is this bad and what should you use instead?
+**Answer:** 
+- **Issue:** `console.log` is synchronous and blocking in Node.js, which can slow down high-traffic apps. It also doesn't persist logs effectively.
+- **Solution:** Use a dedicated logging library like **Winston** or **Bunyan**. These are asynchronous and can transport logs to external monitoring services (like Datadog or CloudWatch).
+
+### 32. How would you handle a user spamming the "Update Steps" API?
+**Answer:** 
+- **Rate Limiting:** Implement a middleware like `express-rate-limit`.
+- **Logic:** Restrict requests from a single IP to a reasonable number (e.g., 100 requests per 15 minutes) to prevent abuse and Denial of Service (DoS).
+
+### 33. Why did you structure the project with `controllers`, `routes`, and `services`?
+**Answer:** 
+- **Maintainability:** It separates concerns. Routes handle HTTP, Controllers handle request/response logic, and Services (if used) handle business logic.
+- **Testability:** It allows us to unit test business logic in isolation without mocking the entire HTTP request stack.
+
+### 34. What is the most critical security flaw in this MVP right now?
+**Answer:** 
+- **Input Validation:** While we have some Mongoose validation, we lack a robust validation layer (like **Joi** or **Zod**) for incoming request bodies. This could allow invalid or malicious data types to reach our database logic.
+
+### 35. If you had 2 more hours, what is the one feature you would add?
+**Answer:** 
+- **CI/CD Pipeline:** I would set up a GitHub Action to automatically run tests (`npm test`) on every push. This ensures that no broken code is ever deployed, which is crucial even in a fast-paced hackathon environment.
